@@ -60,12 +60,26 @@ body {
     overflow: hidden;
   }
   
+  .atm-card-strip {
+    height: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    overflow: hidden;
+    padding-top: 8px;
+  }
+  
+  .atm-card-sprite {
+    height: 42px;
+    width: auto;
+  }
+  
   .atm-inner {
-    padding: 24px 16px 140px;
+    padding: 0px 16px 140px;
   }
   
   .atm-screen-wrapper {
-    margin-top: 24px;
+    margin-top: 10px;
     border: 6px solid #d1d1c5;
   }
   
@@ -82,13 +96,6 @@ body {
     left: 16px;
     bottom: 96px;
     width: 70px;
-  }
-  
-  .atm-body-graffiti {
-    position: absolute;
-    left: 40px;
-    bottom: 48px;
-    width: 150px;
   }
   
   .atm-systems-logo {

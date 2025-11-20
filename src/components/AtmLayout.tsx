@@ -2,6 +2,7 @@ import atmSign from '../assets/atm_sign.png';
 import graffiti from '../assets/graffiti.png';
 import sticker from '../assets/sticker_graf.png';
 import systems from '../assets/systems.png';
+import creditSprite from '../assets/creditcard_sprite.png';
 import '../atm.css';
 
 export function AtmLayout() {
@@ -16,6 +17,14 @@ export function AtmLayout() {
         <div className="atm-divider" />
 
         <div className="atm-shell">
+          <div className="atm-card-strip">
+            <img
+              src={creditSprite}
+              alt="Supported card networks"
+              className="atm-card-sprite"
+            />
+          </div>
+
           <div className="atm-inner">
             <div className="atm-screen-wrapper">
               <div className="atm-screen">
