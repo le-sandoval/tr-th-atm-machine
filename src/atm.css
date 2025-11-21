@@ -11,14 +11,14 @@ body {
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    padding: 40px 0;
-    background: #8a6bab;
+    background: #9475a2;
   }
   
   .atm-machine {
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-top: 90px;
   }
   
   .atm-sign-bar {
@@ -56,12 +56,11 @@ body {
   .atm-shell {
     position: relative;
     width: 395px;
-    min-height: 640px;
+    min-height: calc(100vh - 80px - 110px);
     background: #f7f6ec;
-    border-radius: 0 0 28px 28px;
     overflow: hidden;
   }
-  
+
   .atm-card-strip {
     height: 15px;
     display: flex;
@@ -217,15 +216,15 @@ body {
   
   .atm-sticker {
     position: absolute;
-    left: 20px;
-    bottom: 0;
-    width: 80px;
+    left: 22px;
+    bottom: 53px;
+    width: 165px;
   }
   
   .atm-systems-logo {
     position: absolute;
-    right: 28px;
-    bottom: 10px;
-    width: 80px;
+    right: 70px;
+    bottom: 137px;
+    width: 54px;
   }
   
