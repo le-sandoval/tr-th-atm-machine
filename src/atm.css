@@ -63,17 +63,59 @@ body {
   }
 
   .atm-card-strip {
-    height: 15px;
+    height: 21px;
     display: flex;
     justify-content: center;
-    align-items: flex-end;
+    align-items: center;
+    gap: 4px;
     overflow: hidden;
     padding-top: 8px;
+    padding-left: 6px;
+    padding-right: 6px;
   }
   
-  .atm-card-sprite {
-    height: 42px;
-    width: auto;
+  .atm-card {
+    height: 21px;
+    background-image: url('./assets/creditcard_sprite.png');
+    background-repeat: no-repeat;
+    background-position-y: -21px;
+    opacity: 0.35;
+    image-rendering: pixelated;
+  }
+  
+  .atm-card--star {
+    width: 30px;
+    background-position-x: 0;
+  }
+  
+  .atm-card--pulse {
+    width: 52px;
+    background-position-x: -32px;
+  }
+  
+  .atm-card--maestro {
+    width: 39px;
+    background-position-x: -86px;
+  }
+  
+  .atm-card--mastercard {
+    width: 35px;
+    background-position-x: -127px;
+  }
+  
+  .atm-card--plus {
+    width: 38px;
+    background-position-x: -164px;
+  }
+  
+  .atm-card--visa {
+    width: 31px;
+    background-position-x: -204px;
+  }
+  
+  .atm-card--active {
+    background-position-y: 0;
+    opacity: 1;
   }
   
   .atm-inner {

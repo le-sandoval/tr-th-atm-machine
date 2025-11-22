@@ -3,7 +3,6 @@ import atmSign from '../assets/atm_sign.png';
 import graffiti from '../assets/graffiti.png';
 import sticker from '../assets/sticker_graf.png';
 import systems from '../assets/systems.png';
-import creditSprite from '../assets/creditcard_sprite.png';
 import '../atm.css';
 
 const CORRECT_PIN = '1234';
@@ -12,21 +11,25 @@ const MAX_BALANCE = 200000; //$200,000.00
 const MAX_DEPOSIT = 10000;  //max per deposit
 const MAX_WITHDRAW = 10000; //max per withdraw
 
-type Screen = 'pin' | 'menu' | 'withdraw' | 'withdraw-amount' | 'deposit' | 'deposit-amount' | 'balance';
+type Screen = 'welcome' | 'pin' | 'menu' | 'withdraw' | 'withdraw-amount' | 'deposit' | 'deposit-amount' | 'balance';
+type CardNetwork = 'star' | 'pulse' | 'maestro' | 'mastercard' | 'plus' | 'visa';
 
 export function AtmLayout() {
   const sideButtons = [0, 1, 2, 3];
 
-  const [screen, setScreen] = useState<Screen>('pin');
+  const [screen, setScreen] = useState<Screen>('welcome');
   const [enteredPin, setEnteredPin] = useState('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [balance, setBalance] = useState(INITIAL_BALANCE);
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState<string | null>(null);
 
-  const [cardType, setCardType] = useState<'star' | null>(null);
+  const [cardType, setCardType] = useState<CardNetwork | null>(null);
+
+  //derived from cardType, no separate auth state stored
+  const isAuthenticated = cardType !== null;
 
   // Helper booleans
+  const showWelcomeScreen = screen === 'welcome';
   const showPinScreen = screen === 'pin';
   const showMenuScreen = screen === 'menu';
   const showWithdrawScreen = screen === 'withdraw';
@@ -35,25 +38,23 @@ export function AtmLayout() {
   const showDepositAmountScreen = screen === 'deposit-amount';
   const showBalanceScreen = screen === 'balance';
 
-  // Debug: Log screen changes
+
+      // auto-return to welcome screen after 30 seconds of inactivity on PIN screen
   useEffect(() => {
-    console.log('Screen state changed to:', screen);
-    console.log('showMenuScreen:', showMenuScreen);
-    console.log('showWithdrawScreen:', showWithdrawScreen);
-    console.log('showDepositScreen:', showDepositScreen);
-    console.log('showBalanceScreen:', showBalanceScreen);
-    
-    // Check if menu buttons exist in DOM when on menu screen
-    if (showMenuScreen) {
-      setTimeout(() => {
-        const allClickableLabels = document.querySelectorAll('.atm-menu-label--clickable');
-        console.log('Total clickable labels found:', allClickableLabels.length);
-        allClickableLabels.forEach((label, index) => {
-          console.log(`Label ${index}:`, label.textContent?.trim(), 'has onClick:', !!(label as HTMLElement).onclick);
-        });
-      }, 100);
-    }
-  }, [screen, showMenuScreen, showWithdrawScreen, showDepositScreen, showBalanceScreen]);
+    if (!showPinScreen) return;
+
+    const timeoutId = setTimeout(() => {
+      // reset PIN and return to welcome screen after 30 seconds of inactivity
+      setEnteredPin('');
+      setMessage(null);
+      setScreen('welcome');
+    }, 30000); //30 seconds
+
+    // cleanup timeout if component unmounts or screen changes
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [showPinScreen, enteredPin]); //reset timer when PIN changes -user activity
 
   // PIN flow 
   function handlePinSubmit(e?: FormEvent) {
@@ -62,57 +63,61 @@ export function AtmLayout() {
     }
 
     if (enteredPin.length === 4 && enteredPin === CORRECT_PIN) {
-      setIsAuthenticated(true);
       setCardType('star');
       setScreen('menu');
       setMessage(null);
     } else {
-      setIsAuthenticated(false);
       setCardType(null);
       setMessage('Wrong PIN. Retry.');
     }
   }
 
+  function handleGoToPin() {
+    setEnteredPin('');
+    setMessage(null);
+    setScreen('pin');
+  }
+
   function handleExit() {
-    setIsAuthenticated(false);
+    if (!isAuthenticated) return; //only allow exit if authenticated
     setCardType(null);
     setEnteredPin('');
     setAmount('');
     setMessage(null);
-    setScreen('pin');
+    setScreen('welcome');
   }
 
   function handleSelectWithdraw() {
-    console.log('handleSelectWithdraw called - current screen:', screen);
+    if (!isAuthenticated) return;
     setAmount('');
     setMessage(null);
     setScreen('withdraw');
-    console.log('Screen set to withdraw');
   }
 
   function handleSelectDeposit() {
-    console.log('handleSelectDeposit called - current screen:', screen);
+    if (!isAuthenticated) return;
     setAmount('');
     setMessage(null);
     setScreen('deposit');
-    console.log('Screen set to deposit');
   }
 
   function handleSelectBalance() {
-    console.log('handleSelectBalance called - current screen:', screen);
+    if (!isAuthenticated) return;
     setMessage(null);
     setScreen('balance');
-    console.log('Screen set to balance');
   }
 
   function handleReEnterPin() {
-    console.log('handleReEnterPin called - current screen:', screen);
-    setIsAuthenticated(false);
+    if (!isAuthenticated) return; // only allow if authenticated
     setCardType(null);
     setEnteredPin('');
     setMessage(null);
     setScreen('pin');
-    console.log('Screen set to pin');
+  }
+
+  function cardClass(name: CardNetwork) {
+    const base = `atm-card atm-card--${name}`;
+    return cardType === name ? `${base} atm-card--active` : base;
   }
 
   // Button mapping for all screens
@@ -120,6 +125,20 @@ export function AtmLayout() {
     left: { [key: number]: (() => void) | null };
     right: { [key: number]: (() => void) | null };
   }> = {
+    welcome: {
+      left: {
+        0: null,
+        1: null,
+        2: null,
+        3: null,
+      },
+      right: {
+        0: null,
+        1: null,
+        2: null,
+        3: handleGoToPin, // Enter PIN
+      },
+    },
     pin: {
       left: {
         0: null,
@@ -131,7 +150,7 @@ export function AtmLayout() {
         0: null,
         1: null,
         2: null,
-        3: handlePinSubmit, // Enter PIN
+        3: handlePinSubmit, // NEXT
       },
     },
     menu: {
@@ -417,11 +436,12 @@ export function AtmLayout() {
 
         <div className="atm-shell">
           <div className="atm-card-strip">
-            <img
-              src={creditSprite}
-              alt="Supported card networks"
-              className="atm-card-sprite"
-            />
+            <div className={cardClass('star')} />
+            <div className={cardClass('pulse')} />
+            <div className={cardClass('maestro')} />
+            <div className={cardClass('mastercard')} />
+            <div className={cardClass('plus')} />
+            <div className={cardClass('visa')} />
           </div>
 
           <div className="atm-inner">
@@ -433,14 +453,10 @@ export function AtmLayout() {
                       className="atm-side-button" 
                       id={`left-${i}`}
                       onClick={() => {
-                        console.log(`Left button ${i} clicked, screen:`, screen);
                         const mapping = screenButtonMapping[screen];
                         const handler = mapping.left[i as keyof typeof mapping.left];
                         if (handler) {
-                          console.log(`Calling handler for left-${i} on ${screen} screen`);
                           handler();
-                        } else {
-                          console.log(`No handler for left-${i} on ${screen} screen`);
                         }
                       }}
                       style={{ cursor: 'pointer' }}
@@ -454,10 +470,16 @@ export function AtmLayout() {
                 <div className="atm-screen">
                     <div className="atm-screen-content">
                     <div className="atm-screen-header">
+                        {showWelcomeScreen && (
+                          <>
+                            <p className="atm-screen-header-line">Welcome to the</p>
+                            <p className="atm-screen-header-line">ATM</p>
+                          </>
+                        )}
                         {showPinScreen && (
                           <>
                             <p className="atm-screen-header-line">
-                              {message || 'Welcome to the ATM'}
+                              {message || 'Enter PIN'}
                             </p>
 
                             <div className="atm-pin-visual">
@@ -808,10 +830,17 @@ export function AtmLayout() {
                             )}
                         </div>
                         <div className="atm-menu-slot atm-menu-slot--right">
-                            {showPinScreen ? (
+                            {showWelcomeScreen ? (
                               <>
                                 <span className="atm-menu-label atm-menu-label--right">
                                 Enter PIN
+                                </span>
+                                <span className="atm-menu-connector atm-menu-connector--right" />
+                              </>
+                            ) : showPinScreen ? (
+                              <>
+                                <span className="atm-menu-label atm-menu-label--right">
+                                NEXT
                                 </span>
                                 <span className="atm-menu-connector atm-menu-connector--right" />
                               </>
@@ -876,14 +905,10 @@ export function AtmLayout() {
                       className="atm-side-button" 
                       id={`right-${i}`}
                       onClick={() => {
-                        console.log(`Right button ${i} clicked, screen:`, screen);
                         const mapping = screenButtonMapping[screen];
                         const handler = mapping.right[i as keyof typeof mapping.right];
                         if (handler) {
-                          console.log(`Calling handler for right-${i} on ${screen} screen`);
                           handler();
-                        } else {
-                          console.log(`No handler for right-${i} on ${screen} screen`);
                         }
                       }}
                       style={{ cursor: 'pointer' }}
