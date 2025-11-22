@@ -93,7 +93,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 105px 0px 22px 0px;
+    padding: 108px 0px 21px 0px;
   }
   
   .atm-side-button-row {
@@ -191,20 +191,22 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    margin-top: 52px;
+    margin-top: 26px;
   }
   
   .atm-menu-row {
     display: flex;
     justify-content: space-between;
     font-size: 10px;
-    padding-top: 19px;
+    padding-top: 16px;
   }
 
   .atm-menu-slot {
     flex: 1;
     display: flex;
     align-items: center;
+    position: relative;
+    z-index: 1;
   }
   
   .atm-menu-slot--left {
@@ -232,6 +234,7 @@ body {
   .atm-menu-label {
     min-width: 0;
     white-space: nowrap;
+    display: inline-block;
   }
   
   .atm-menu-label--left {
@@ -315,8 +318,18 @@ body {
     background: #0f5a8a;
   }
 
+  .atm-amount-form {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
   .atm-menu-label--clickable {
     cursor: pointer;
+    pointer-events: auto;
+    user-select: none;
+    position: relative;
+    z-index: 10;
   }
 
   .atm-menu-label--clickable:hover {
