@@ -54,7 +54,7 @@ const MESSAGES = {
     `Deposit $${amount.toFixed(2)}\n${formatBalanceLine(balance)}`,
 } as const;
 
-type Screen = 'welcome' | 'pin' | 'menu' | 'withdraw' | 'withdraw-amount' | 'deposit' | 'deposit-amount' | 'balance';
+type Screen = 'welcome' | 'pin' | 'menu' | 'withdraw' | 'withdraw-amount' | 'deposit' | 'deposit-amount' | 'balance' | 'history';
 type CardNetwork = 'star' | 'pulse' | 'maestro' | 'mastercard' | 'plus' | 'visa';
 
 export function AtmLayout() {
@@ -67,6 +67,14 @@ export function AtmLayout() {
   const [message, setMessage] = useState<string | null>(null);
 
   const [cardType, setCardType] = useState<CardNetwork | null>(null);
+
+  // Transaction history state
+  const [transactions, setTransactions] = useState<Array<{
+    type: 'deposit' | 'withdraw';
+    amount: number;
+    balance: number;
+    timestamp: Date;
+  }>>([]);
 
   // For this assignment, a successful PIN sets a cardType, in this case 'star',
   // and "cardType !== null" is treated as "this session is authenticated".
@@ -82,6 +90,7 @@ export function AtmLayout() {
   const showDepositScreen = screen === 'deposit';
   const showDepositAmountScreen = screen === 'deposit-amount';
   const showBalanceScreen = screen === 'balance';
+  const showTransactionHistoryScreen = screen === 'history';
 
 
   // Simple client side guard to mimic ATM behavior,
@@ -130,6 +139,7 @@ export function AtmLayout() {
     setEnteredPin('');
     setAmount('');
     setMessage(null);
+    setTransactions([]); // Clear transaction history on logout
     setScreen('welcome');
   }
 
@@ -151,6 +161,12 @@ export function AtmLayout() {
     if (!isAuthenticated) return;
     setMessage(null);
     setScreen('balance');
+  }
+
+  function handleSelectTransactionHistory() {
+    if (!isAuthenticated) return;
+    setMessage(null);
+    setScreen('history');
   }
 
   function handleReEnterPin() {
@@ -202,7 +218,7 @@ export function AtmLayout() {
     menu: {
       left: {
         0: null,
-        1: null,
+        1: handleSelectTransactionHistory, // Transaction History
         2: handleSelectWithdraw, // Withdraw
         3: handleSelectDeposit, // Deposit
       },
@@ -302,6 +318,15 @@ export function AtmLayout() {
           
           const newBalance = balance - value;
           setBalance(newBalance);
+          
+          // Add transaction to history
+          setTransactions(prev => [...prev, {
+            type: 'withdraw',
+            amount: value,
+            balance: newBalance,
+            timestamp: new Date(),
+          }]);
+          
           setMessage(MESSAGES.withdrawSuccess(value, newBalance));
           setAmount('');
           setScreen('balance');
@@ -364,6 +389,20 @@ export function AtmLayout() {
         3: null,
       },
     },
+    history: {
+      left: {
+        0: null,
+        1: null,
+        2: null,
+        3: () => setScreen('menu'), // Back to menu
+      },
+      right: {
+        0: null,
+        1: null,
+        2: null,
+        3: null,
+      },
+    },
   };
 
   function parseAmount(): number | null {
@@ -400,6 +439,15 @@ export function AtmLayout() {
 
     const newBalance = balance - value;
     setBalance(newBalance);
+    
+    // Add transaction to history
+    setTransactions(prev => [...prev, {
+      type: 'withdraw',
+      amount: value,
+      balance: newBalance,
+      timestamp: new Date(),
+    }]);
+    
     setMessage(MESSAGES.withdrawSuccess(value, newBalance));
     setAmount('');
     setScreen('balance');
@@ -424,6 +472,15 @@ export function AtmLayout() {
     }
 
     setBalance(newBalance);
+    
+    // Add transaction to history
+    setTransactions(prev => [...prev, {
+      type: 'deposit',
+      amount: value,
+      balance: newBalance,
+      timestamp: new Date(),
+    }]);
+    
     setMessage(MESSAGES.depositSuccess(value, newBalance));
     setAmount('');
     setScreen('balance');
@@ -444,6 +501,15 @@ export function AtmLayout() {
     }
     
     setBalance(newBalance);
+    
+    // Add transaction to history
+    setTransactions(prev => [...prev, {
+      type: 'deposit',
+      amount: amountValue,
+      balance: newBalance,
+      timestamp: new Date(),
+    }]);
+    
     setMessage(MESSAGES.depositSuccess(amountValue, newBalance));
     setAmount('');
     setScreen('balance');
@@ -464,6 +530,15 @@ export function AtmLayout() {
     
     const newBalance = balance - amountValue;
     setBalance(newBalance);
+    
+    // Add transaction to history
+    setTransactions(prev => [...prev, {
+      type: 'withdraw',
+      amount: amountValue,
+      balance: newBalance,
+      timestamp: new Date(),
+    }]);
+    
     setMessage(MESSAGES.withdrawSuccess(amountValue, newBalance));
     setAmount('');
     setScreen('balance');
@@ -586,6 +661,26 @@ export function AtmLayout() {
                         : ['Your balance is:', `$${balance.toFixed(2)}`];
                       return <AtmScreenHeader lines={lines} />;
                     })()}
+                    {showTransactionHistoryScreen && (() => {
+                      const lines: string[] = [];
+                      
+                      if (transactions.length === 0) {
+                        lines.push('No transactions');
+                        lines.push('yet');
+                      } else {
+                        lines.push('Last Transactions');
+                        // Show last 3 transactions (most recent first)
+                        const recentTransactions = transactions.slice(-3).reverse();
+                        recentTransactions.forEach((tx) => {
+                          const symbol = tx.type === 'deposit' ? '+' : '-';
+                          const amount = tx.amount.toFixed(2);
+                          lines.push(`${symbol} $${amount}`);
+                        });
+                        lines.push(`Total: ${transactions.length}`);
+                      }
+                      
+                      return <AtmScreenHeader lines={lines} />;
+                    })()}
 
                     <div className="atm-screen-menu">
                         <div className="atm-menu-row">
@@ -607,11 +702,18 @@ export function AtmLayout() {
 
                         <div className="atm-menu-row">
                         <div className="atm-menu-slot atm-menu-slot--left">
-                            <AtmMenuOption
-                              side="left"
-                              label="$40"
-                              visible={quickAmountVisible}
-                            />
+                            {(() => {
+                              let label = 'History';
+                              let visible = false;
+                              if (showMenuScreen) {
+                                label = 'History';
+                                visible = true;
+                              } else if ((showDepositScreen || showWithdrawScreen) && !message) {
+                                label = '$40';
+                                visible = true;
+                              }
+                              return <AtmMenuOption side="left" label={label} visible={visible} />;
+                            })()}
                         </div>
                         <div className="atm-menu-slot atm-menu-slot--right">
                             {(() => {
@@ -674,7 +776,7 @@ export function AtmLayout() {
                               if (showMenuScreen) {
                                 label = 'Deposit';
                                 visible = true;
-                              } else if (showDepositAmountScreen || showWithdrawAmountScreen || showDepositScreen || showWithdrawScreen || showBalanceScreen) {
+                              } else if (showDepositAmountScreen || showWithdrawAmountScreen || showDepositScreen || showWithdrawScreen || showBalanceScreen || showTransactionHistoryScreen) {
                                 label = 'Back';
                                 visible = true;
                               }
